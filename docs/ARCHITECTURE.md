@@ -7,10 +7,10 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 - `Startup_AGAGate` isolates chipset detection.
 - `Engine_Init` owns the custom-chip setup and installs the Copper list.
 - `Effect_Init` and `Effect_Frame` are the effect graph entry points.
-- `Effect_UpdateCopperGradient` rewrites AGA high/low colour slots from a generated 24-bit table.
+- `Effect_CopperLattice` rewrites AGA high/low colour slots from a generated 24-bit table.
 - `Effect_CopperLattice`, `Effect_TunnelLayer`, `Effect_SpriteOrbLayer`, `Scene_Update` and `Music_EventBus` form the per-frame effect graph.
-- `Screen_Init` clears the full-height display buffer and copies the 80-line generated logo into each correctly-strided bitplane.
-- `Music_Init` and `Music_Tick` reserve the music control surface.
+- `Screen_Init` is intentionally light because the full-height planar screen is source-generated and included as `assets/screen.raw`.
+- `Music_Init` starts Paula AUD0 playback from `assets/audio_loop.raw`; `Music_Tick` drives the visual event pulse.
 - The main loop is persistent and exits only on left mouse, matching demo/cracktro behaviour instead of auto-closing during boot smoke tests.
 
 ## Data flow
@@ -18,7 +18,9 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 ```text
 tools/generate_assets.py
  ├─ logo.raw / logo_preview.png
+ ├─ screen.raw / screen_preview.png
  ├─ hyperdrive.mod
+ ├─ audio_loop.raw
  ├─ plasma_palette.bin
  ├─ copper_gradient.bin
  └─ tunnel.bin
@@ -38,8 +40,8 @@ The engine is designed around AGA PAL:
 - Four bitplanes as the baseline compositing surface.
 - AGA colour writes through `BPLCON3` high/low nibble selection.
 - Copper-controlled effect slots for per-line 24-bit colour motion.
-- Blitter line/fill layer for vector and tunnel effects.
-- Hardware sprites for high-priority glow/orb layers.
+- Hardware sprite pointer/control setup for high-priority glow/orb layers.
+- Blitter/vector expansion points are kept isolated from the boot-critical path.
 
 ## Floppy turbo mode
 
@@ -47,6 +49,6 @@ The engine is designed around AGA PAL:
 
 - `S/Startup-Sequence`
 - `aga_hyperdrive_engine`
-- placeholder `C`, `DEVS` and `LIBS` directories
+- minimal `C`, `DEVS` and `LIBS` directories
 
 The startup sequence launches the engine directly so minimal AROS/Kickstart boot environments do not abort on missing shell helper commands. If `xdftool` is installed, the build also emits `build/aga_hyperdrive_turbo.adf`.

@@ -2,9 +2,11 @@
 
 **AGA Hyperdrive Engine** is a new-from-scratch Amiga AGA effects engine aiming for state-of-the-art PAL Amiga 1200/4000 visuals while staying original, reproducible and hardware-conscious.
 
-The first revision establishes the engine spine: deterministic assets, generated music, generated 24-bit AGA palettes, Copper effect slots, a frame loop, validation tooling and a classic hunk build path. The intent is to push AGA hardware with layered Copper, blitter, sprite and music systems rather than being a single hard-coded intro.
+The current revision is a complete first full demo engine: deterministic full-screen art, generated music, raw Paula playback, generated 24-bit AGA palettes, Copper effect slots, a persistent frame loop, sprite/orb state, tunnel/plasma/floor layers, validation tooling and a classic hunk build path. It is built to push AGA hardware with reusable effect-graph structure instead of a single hard-coded intro.
 
 ![Generated logo preview](docs/screenshots/aga-hyperdrive-logo-preview.png)
+
+![Generated full-screen preview](docs/screenshots/aga-hyperdrive-screen-preview.png)
 
 ## FS-UAE test run
 
@@ -17,6 +19,7 @@ The first revision establishes the engine spine: deterministic assets, generated
 - Make every generated asset reproducible from source.
 - Build a reusable effect graph rather than one-off scene code.
 - Keep music in-repo: generated ProTracker-compatible module data with bass, lead, glass, kick, snare and hat instruments.
+- Play a generated signed 8-bit Paula loop directly from the runtime so the bootable target has sound without external files.
 - Validate structure, assets and release manifests on the host.
 
 ## Engine layers
@@ -25,10 +28,11 @@ The first revision establishes the engine spine: deterministic assets, generated
 | --- | --- | --- |
 | Startup | AGA gate, OS-safe entry/exit | isolated gate and clean structure |
 | Copper | Display setup and AGA colour slots | 32 live 24-bit slots plus generated gradients |
-| Bitmap | Four-plane 320-wide logo/screen storage | deterministic planar logo asset |
+| Bitmap | Four-plane 320×256 screen storage | deterministic full-screen planar art |
+| Art/GFX | Logo, plasma band, tunnel ribs, orbs, status panel and floor | generated `assets/screen.raw` and preview PNG |
 | Plasma | 256-colour 24-bit AGA ramp | generated binary table |
 | Tunnel | Reciprocal camera/projection table | generated binary table |
-| Music | Four-channel MOD data | generated `assets/hyperdrive.mod` |
+| Music | Four-channel MOD data plus runtime Paula loop | generated `assets/hyperdrive.mod` and `assets/audio_loop.raw` |
 | Validation | Asset/source/manifest sanity | `make validate`, reproducibility, manifest |
 
 ## Build
@@ -64,6 +68,9 @@ Generated assets:
 
 - `assets/logo.raw`
 - `assets/logo_preview.png`
+- `assets/screen.raw`
+- `assets/screen_preview.png`
+- `assets/audio_loop.raw`
 - `assets/hyperdrive.mod`
 - `assets/plasma_palette.bin`
 - `assets/copper_gradient.bin`
@@ -71,7 +78,7 @@ Generated assets:
 
 ## Run target
 
-Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The current executable is a foundation/smoke-test engine build that displays the generated logo through real Copper bitplane pointers and live AGA colour-slot updates. It stays running until the left mouse button is pressed. The next milestones are full chip-RAM rebasing, hardware-confirmed AGA detection, blitter vector layer, sprite multiplexer and scene sequencer.
+Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The executable displays generated full-screen planar art through real Copper bitplane pointers, runs live AGA colour-slot updates, advances tunnel/orb/scene/music state every frame, starts Paula channel 0 playback from `assets/audio_loop.raw`, and stays running until the left mouse button is pressed.
 
 ## Validation
 
@@ -82,13 +89,14 @@ python3 tools/make_manifest.py
 shasum -a 256 -c MANIFEST.sha256
 ```
 
-## Original effect roadmap
+## Implemented effects
 
 - Hyperdrive plasma lattice: per-line AGA colour writes plus sub-frame palette phase modulation.
-- Blitter spline tunnel: reciprocal-table camera, line spans and collision-safe clipping.
-- Sprite energy orbs: depth-sorted hardware sprites with palette cycling.
+- Tunnel layer: reciprocal-table camera/depth modulation plus static wire ribs in the generated screen layer.
+- Energy orbs: generated shaded orb art plus live sprite/orb control state.
 - Morphing logo material: Copper glint, per-row scroll and dynamic colour-bank swaps.
-- Music-reactive scene graph: MOD row/tick events drive plasma intensity, tunnel speed and sprite bursts.
+- Music-reactive scene graph: row/tick-style event pulses drive plasma intensity, tunnel speed and sprite bursts.
+- Full-screen generated art: logo, aurora/plasma band, tunnel ribs, orb art, status panel and floor bars.
 
 ## License
 

@@ -9,6 +9,7 @@ ASSETS = ROOT / "assets"
 ASSETS.mkdir(exist_ok=True)
 
 W, H = 320, 80
+SCREEN_H = 256
 PAL = [
     0x001, 0x013, 0x025, 0x047, 0x06A, 0x09D, 0x4DF, 0xCFF,
     0x112, 0x302, 0x714, 0xB25, 0xF47, 0xFC6, 0xFFF, 0xF7D,
@@ -42,6 +43,8 @@ GLYPHS = {
 }
 
 def put_text(img, text, x, y, scale, fg, shadow=8):
+    h = len(img)
+    w = len(img[0]) if h else 0
     for i, ch in enumerate(text):
         g = GLYPHS[ch]
         ox = x + i * 6 * scale
@@ -52,9 +55,9 @@ def put_text(img, text, x, y, scale, fg, shadow=8):
                 for yy in range(scale):
                     for xx in range(scale):
                         px, py = ox + gx * scale + xx, y + gy * scale + yy
-                        if 0 <= px + 2 < W and 0 <= py + 2 < H:
+                        if 0 <= px + 2 < w and 0 <= py + 2 < h:
                             img[py + 2][px + 2] = shadow
-                        if 0 <= px < W and 0 <= py < H:
+                        if 0 <= px < w and 0 <= py < h:
                             edge = gx in (0, 4) or gy in (0, 6)
                             img[py][px] = min(15, fg + (2 if edge else 0))
 
@@ -76,6 +79,62 @@ def logo():
         img[H - 3][x] = 6 if x % 11 else 15
     return img
 
+def full_screen():
+    img = [[0] * W for _ in range(SCREEN_H)]
+    lg = logo()
+    for y, row in enumerate(lg):
+        img[y][:] = row[:]
+    # Aurora/plasma band.
+    for y in range(86, 190):
+        for x in range(W):
+            t = (math.sin((x * 0.045) + (y * 0.13)) + math.sin((x + y) * 0.031) + 2) / 4
+            img[y][x] = 2 + int(t * 5)
+            if (x * 7 + y * 13) % 211 == 0:
+                img[y][x] = 14
+    # Wire tunnel perspective ribs.
+    cx, cy = 160, 138
+    for ring in range(7):
+        rz = 28 + ring * 15
+        w = 34 + ring * 17
+        h = 8 + ring * 8
+        col = 12 if ring % 2 else 6
+        for x in range(cx - w, cx + w + 1):
+            for yy in (cy - h, cy + h):
+                if 0 <= x < W and 86 <= yy < SCREEN_H:
+                    img[yy][x] = col
+        for y in range(cy - h, cy + h + 1):
+            for xx in (cx - w, cx + w):
+                if 0 <= xx < W and 86 <= y < SCREEN_H:
+                    img[y][xx] = col
+    for a in range(0, 360, 30):
+        rad = math.radians(a)
+        x2, y2 = int(cx + math.cos(rad) * 135), int(cy + math.sin(rad) * 54)
+        steps = max(abs(x2 - cx), abs(y2 - cy), 1)
+        for i in range(steps):
+            x = int(cx + (x2 - cx) * i / steps)
+            y = int(cy + (y2 - cy) * i / steps)
+            if 0 <= x < W and 86 <= y < 190:
+                img[y][x] = 15 if i % 9 == 0 else 5
+    # Sprite/orb-like software art in the static layer.
+    for ox, oy, col in [(72, 114, 15), (238, 112, 7), (97, 171, 6), (221, 170, 13)]:
+        for dy in range(-10, 11):
+            for dx in range(-10, 11):
+                d = dx * dx + dy * dy
+                if d <= 100:
+                    shade = col if d < 40 else max(1, col - 2)
+                    img[oy + dy][ox + dx] = shade
+    # Scroller/status panel.
+    for y in range(198, 226):
+        for x in range(W):
+            img[y][x] = 1 if y in (198, 225) else 2
+    put_text(img, "HYPERDRIVE AGA ENGINE", 22, 203, 2, 5)
+    # Floor bars.
+    for y in range(232, 256):
+        for x in range(W):
+            band = (y - 232) // 4
+            img[y][x] = [1, 3, 6, 15, 13, 11][band % 6]
+    return img
+
 def planes(img, n=4):
     out = bytearray()
     for p in range(n):
@@ -88,6 +147,8 @@ def planes(img, n=4):
     return bytes(out)
 
 def png_rgb(img, scale=3):
+    h = len(img)
+    w = len(img[0]) if h else 0
     raw_rows = []
     for row in img:
         rb = bytearray()
@@ -96,7 +157,7 @@ def png_rgb(img, scale=3):
             rgb = bytes([((c >> 8) & 15) * 17, ((c >> 4) & 15) * 17, (c & 15) * 17])
             rb += rgb * scale
         raw_rows += [bytes(rb)] * scale
-    width, height = W * scale, H * scale
+    width, height = w * scale, h * scale
     raw = b"".join(b"\0" + r for r in raw_rows)
     def chunk(kind, data):
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
@@ -120,6 +181,26 @@ def sample_wave(freq, seconds, rate=8287, amp=64, waveform="sine"):
     if len(data) % 2:
         data.append(0)
     return bytes(data)
+
+def audio_loop(rate=8287, seconds=2.0):
+    n = int(rate * seconds)
+    out = bytearray()
+    scale = [55, 65.41, 73.42, 82.41, 98.0, 110.0, 130.81, 146.83]
+    for i in range(n):
+        step = (i // (rate // 8)) % len(scale)
+        bass = math.sin(math.tau * scale[step] * i / rate) * 44
+        lead = math.sin(math.tau * scale[(step + 2) % len(scale)] * 2 * i / rate) * 18
+        hat = 0
+        if (i % (rate // 8)) < 120:
+            hat = ((hashlib.sha256(f"hat:{i}".encode()).digest()[0] / 127.5) - 1) * 20
+        kick = 0
+        if (i % (rate // 2)) < 700:
+            k = i % (rate // 2)
+            kick = math.sin(math.tau * (90 - k * 0.06) * i / rate) * (1 - k / 700) * 50
+        out.append(int(max(-127, min(127, bass + lead + hat + kick))) & 0xff)
+    if len(out) % 2:
+        out.append(0)
+    return bytes(out)
 
 def mod():
     samples = [
@@ -178,7 +259,11 @@ def main():
     img = logo()
     (ASSETS / "logo.raw").write_bytes(planes(img))
     (ASSETS / "logo_preview.png").write_bytes(png_rgb(img))
+    screen = full_screen()
+    (ASSETS / "screen.raw").write_bytes(planes(screen))
+    (ASSETS / "screen_preview.png").write_bytes(png_rgb(screen, scale=2))
     (ASSETS / "hyperdrive.mod").write_bytes(mod())
+    (ASSETS / "audio_loop.raw").write_bytes(audio_loop())
     for name, vals in {
         "plasma_palette.bin": gen_tables.plasma_palette(),
         "copper_gradient.bin": gen_tables.copper_gradient(),

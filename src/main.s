@@ -7,6 +7,7 @@ PLANES          EQU 4
 PLANE_SIZE      EQU BYTES_PER_ROW*HEIGHT
 LOGO_PLANE_SIZE EQU 320*80/8
 LOGO_BYTES      EQU PLANES*LOGO_PLANE_SIZE
+AUDIO_WORDS     EQU 8287
 
         section code,code
 
@@ -78,6 +79,7 @@ Engine_Init:
 Engine_Shutdown:
         lea     CUSTOM,a6
         move.w  #$7FFF,DMACON(a6)
+        move.w  #0,AUD0VOL(a6)
         rts
 
 Engine_WaitFrame:
@@ -99,22 +101,6 @@ Effect_Init:
         rts
 
 Screen_Init:
-        lea     screen,a0
-        moveq   #0,d0
-        move.w  #PLANES*PLANE_SIZE/4-1,d7
-.clear:
-        move.l  d0,(a0)+
-        dbra    d7,.clear
-        lea     logo_data,a0
-        lea     screen,a1
-        moveq   #PLANES-1,d6
-.plane:
-        move.w  #LOGO_PLANE_SIZE/4-1,d7
-.copy:
-        move.l  (a0)+,(a1)+
-        dbra    d7,.copy
-        lea     PLANE_SIZE-LOGO_PLANE_SIZE(a1),a1
-        dbra    d6,.plane
         rts
 
 ; Effect_Frame updates the original state-of-the-art effect graph:
@@ -218,6 +204,15 @@ Copper_Build:
 
 Music_Init:
         clr.w   music_tick
+        lea     CUSTOM,a6
+        move.l  #audio_loop,d0
+        move.w  d0,AUD0LCL(a6)
+        swap    d0
+        move.w  d0,AUD0LCH(a6)
+        move.w  #AUDIO_WORDS,AUD0LEN(a6)
+        move.w  #428,AUD0PER(a6)
+        move.w  #48,AUD0VOL(a6)
+        move.w  #DMAF_SETCLR|DMAF_MASTER|DMAF_AUD0,DMACON(a6)
         rts
 
 Music_Tick:
@@ -308,11 +303,13 @@ copper_fx_slots:
         endr
         dc.w $FFFF,$FFFE
 screen:
-        ds.b PLANE_SIZE*PLANES
+        incbin "assets/screen.raw"
 logo_data:
         incbin "assets/logo.raw"
 mod_data:
         incbin "assets/hyperdrive.mod"
+audio_loop:
+        incbin "assets/audio_loop.raw"
 copper_gradient:
         incbin "assets/copper_gradient.bin"
 tunnel_table:

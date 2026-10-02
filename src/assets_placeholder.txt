@@ -1,1 +1,0 @@
-Assembly includes generated binary tables from assets/.
