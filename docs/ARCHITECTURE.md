@@ -10,6 +10,7 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 - `Effect_UpdateCopperGradient` rewrites AGA high/low colour slots from a generated 24-bit table.
 - `Screen_Init` clears the full-height display buffer and copies the 80-line generated logo into each correctly-strided bitplane.
 - `Music_Init` and `Music_Tick` reserve the music control surface.
+- The main loop is persistent and exits only on left mouse, matching demo/cracktro behaviour instead of auto-closing during boot smoke tests.
 
 ## Data flow
 

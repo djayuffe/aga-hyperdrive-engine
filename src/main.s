@@ -26,8 +26,8 @@ _start:
         bsr     Effect_Frame
         bsr     Music_Tick
         addq.w  #1,frame_counter
-        cmp.w   #900,frame_counter
-        blo     .loop
+        btst    #6,CIAAPRA
+        bne     .loop
         bsr     Engine_Shutdown
         moveq   #0,d0
 Exit:

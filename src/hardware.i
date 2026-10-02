@@ -1,5 +1,6 @@
 ; AGA Hyperdrive Engine hardware/register constants.
 CUSTOM      EQU $DFF000
+CIAAPRA     EQU $BFE001
 DMACON      EQU $096
 DMACONR     EQU $002
 INTENA      EQU $09A

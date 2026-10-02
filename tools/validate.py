@@ -32,6 +32,7 @@ if main.exists():
         check(required in s, f"missing source symbol/comment {required}")
     check("move.w  d0,2(a1)" in s and "move.w  d0,6(a1)" in s, "Copper_Build must patch bitplane pointer high/low words")
     check("lea     screen,a0" in s and "LOGO_PLANE_SIZE" in s, "logo must be copied into a full-height screen buffer")
+    check("btst    #6,CIAAPRA" in s, "main loop must stay running until left mouse is pressed")
     check("TODO" not in s, "source contains TODO")
 
 readme = (ROOT / "README.md").read_text() if (ROOT / "README.md").exists() else ""

@@ -68,7 +68,7 @@ Generated assets:
 
 ## Run target
 
-Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The current executable is a foundation/smoke-test engine build that displays the generated logo through real Copper bitplane pointers and live AGA colour-slot updates. The next milestones are full chip-RAM rebasing, hardware-confirmed AGA detection, blitter vector layer, sprite multiplexer and scene sequencer.
+Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The current executable is a foundation/smoke-test engine build that displays the generated logo through real Copper bitplane pointers and live AGA colour-slot updates. It stays running until the left mouse button is pressed. The next milestones are full chip-RAM rebasing, hardware-confirmed AGA detection, blitter vector layer, sprite multiplexer and scene sequencer.
 
 ## Validation
 
