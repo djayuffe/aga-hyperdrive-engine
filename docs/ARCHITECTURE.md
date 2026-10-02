@@ -8,7 +8,8 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 - `Engine_Init` owns the custom-chip setup and installs the Copper list.
 - `Effect_Init` and `Effect_Frame` are the effect graph entry points.
 - `Effect_CopperLattice` rewrites AGA high/low colour slots from a generated 24-bit table.
-- `Effect_CopperLattice`, `Effect_TunnelLayer`, `Effect_SpriteOrbLayer`, `Scene_Update` and `Music_EventBus` form the per-frame effect graph.
+- `Effect_BitplaneWarp` modulates `BPLCON1` for real hardware scroll/shear movement.
+- `Effect_CopperLattice`, `Effect_TunnelLayer`, `Effect_SpriteOrbLayer`, `Effect_BlitterVectorPulse`, `Scene_Update` and `Music_EventBus` form the per-frame effect graph.
 - `Screen_Init` is intentionally light because the full-height planar screen is source-generated and included as `assets/screen.raw`.
 - `Music_Init` starts Paula AUD0 playback from `assets/audio_loop.raw`; `Music_Tick` drives the visual event pulse.
 - The main loop is persistent and exits only on left mouse, matching demo/cracktro behaviour instead of auto-closing during boot smoke tests.
@@ -21,6 +22,7 @@ tools/generate_assets.py
  ├─ screen.raw / screen_preview.png
  ├─ hyperdrive.mod
  ├─ audio_loop.raw
+ ├─ sprite_orbs.bin / sprite_path.bin
  ├─ plasma_palette.bin
  ├─ copper_gradient.bin
  └─ tunnel.bin
@@ -40,8 +42,9 @@ The engine is designed around AGA PAL:
 - Four bitplanes as the baseline compositing surface.
 - AGA colour writes through `BPLCON3` high/low nibble selection.
 - Copper-controlled effect slots for per-line 24-bit colour motion.
-- Hardware sprite pointer/control setup for high-priority glow/orb layers.
-- Blitter/vector expansion points are kept isolated from the boot-critical path.
+- Runtime `BPLCON1` scroll/shear for planar warp motion.
+- Hardware sprite DMA with generated 16-line orb images and live control words.
+- Blitter DMA workload for a vector scratch surface.
 
 ## Floppy turbo mode
 

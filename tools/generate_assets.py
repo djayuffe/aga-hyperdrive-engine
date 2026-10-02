@@ -202,6 +202,44 @@ def audio_loop(rate=8287, seconds=2.0):
         out.append(0)
     return bytes(out)
 
+def amiga_sprite_words(radius=7):
+    """Return one 16-line, 2-bitplane Amiga hardware sprite image."""
+    out = bytearray()
+    out += b"\0\0\0\0"  # runtime writes control words
+    for y in range(16):
+        p0 = 0
+        p1 = 0
+        for x in range(16):
+            dx = x - 7.5
+            dy = y - 7.5
+            d = math.sqrt(dx * dx + dy * dy)
+            v = 0
+            if d <= radius:
+                light = max(0.0, 1.0 - d / radius)
+                sparkle = 0.35 if dx < -2 and dy < -2 else 0.0
+                v = min(3, 1 + int((light + sparkle) * 3))
+            p0 = (p0 << 1) | (v & 1)
+            p1 = (p1 << 1) | ((v >> 1) & 1)
+        out += struct.pack(">HH", p0, p1)
+    out += b"\0\0\0\0"
+    return bytes(out)
+
+def sprite_orbs():
+    frames = []
+    for i in range(8):
+        frames.append(amiga_sprite_words(radius=5 + (i % 3)))
+    return b"".join(frames)
+
+def sprite_path():
+    out = bytearray()
+    for i in range(256):
+        a = math.tau * i / 256
+        b = math.tau * ((i * 3) & 255) / 256
+        x = 56 + int((math.sin(a) + 1) * 104)
+        y = 58 + int((math.cos(b) + 1) * 72)
+        out += struct.pack(">HH", x & 0xffff, y & 0xffff)
+    return bytes(out)
+
 def mod():
     samples = [
         ("SUBBASS", sample_wave(55, 0.25, amp=72, waveform="tri"), 56, True),
@@ -264,6 +302,8 @@ def main():
     (ASSETS / "screen_preview.png").write_bytes(png_rgb(screen, scale=2))
     (ASSETS / "hyperdrive.mod").write_bytes(mod())
     (ASSETS / "audio_loop.raw").write_bytes(audio_loop())
+    (ASSETS / "sprite_orbs.bin").write_bytes(sprite_orbs())
+    (ASSETS / "sprite_path.bin").write_bytes(sprite_path())
     for name, vals in {
         "plasma_palette.bin": gen_tables.plasma_palette(),
         "copper_gradient.bin": gen_tables.copper_gradient(),

@@ -2,7 +2,7 @@
 
 **AGA Hyperdrive Engine** is a new-from-scratch Amiga AGA effects engine aiming for state-of-the-art PAL Amiga 1200/4000 visuals while staying original, reproducible and hardware-conscious.
 
-The current revision is a complete first full demo engine: deterministic full-screen art, generated music, raw Paula playback, generated 24-bit AGA palettes, Copper effect slots, a persistent frame loop, sprite/orb state, tunnel/plasma/floor layers, validation tooling and a classic hunk build path. It is built to push AGA hardware with reusable effect-graph structure instead of a single hard-coded intro.
+The current revision is a complete Amiga-first AGA effects engine: real 68k runtime motion, AGA chipset probing, deterministic full-screen art, generated hardware sprites, generated music, raw Paula playback, 24-bit AGA Copper colour motion, bitplane scroll/warp, blitter-maintained scratch space, a persistent frame loop, sprite/orb state, tunnel/plasma/floor layers, validation tooling and a classic hunk build path.
 
 ![Generated logo preview](docs/screenshots/aga-hyperdrive-logo-preview.png)
 
@@ -28,8 +28,11 @@ The current revision is a complete first full demo engine: deterministic full-sc
 | --- | --- | --- |
 | Startup | AGA gate, OS-safe entry/exit | isolated gate and clean structure |
 | Copper | Display setup and AGA colour slots | 32 live 24-bit slots plus generated gradients |
+| Warp | Hardware bitplane scroll/shear | runtime `BPLCON1` modulation |
 | Bitmap | Four-plane 320×256 screen storage | deterministic full-screen planar art |
-| Art/GFX | Logo, plasma band, tunnel ribs, orbs, status panel and floor | generated `assets/screen.raw` and preview PNG |
+| Sprites | Eight hardware orbiters | generated sprite images plus runtime control words |
+| Blitter | Hardware-maintained scratch plane | real blitter clear workload for vector expansion |
+| Art/GFX | Logo, plasma band, tunnel ribs, status panel and floor | generated `assets/screen.raw` and preview PNG |
 | Plasma | 256-colour 24-bit AGA ramp | generated binary table |
 | Tunnel | Reciprocal camera/projection table | generated binary table |
 | Music | Four-channel MOD data plus runtime Paula loop | generated `assets/hyperdrive.mod` and `assets/audio_loop.raw` |
@@ -71,6 +74,8 @@ Generated assets:
 - `assets/screen.raw`
 - `assets/screen_preview.png`
 - `assets/audio_loop.raw`
+- `assets/sprite_orbs.bin`
+- `assets/sprite_path.bin`
 - `assets/hyperdrive.mod`
 - `assets/plasma_palette.bin`
 - `assets/copper_gradient.bin`
@@ -78,7 +83,7 @@ Generated assets:
 
 ## Run target
 
-Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The executable displays generated full-screen planar art through real Copper bitplane pointers, runs live AGA colour-slot updates, advances tunnel/orb/scene/music state every frame, starts Paula channel 0 playback from `assets/audio_loop.raw`, and stays running until the left mouse button is pressed.
+Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The executable reads the chipset ID before takeover, displays generated full-screen planar art through real Copper bitplane pointers, runs live AGA colour-slot updates, modulates `BPLCON1`, moves eight hardware sprite orbiters, performs a recurring blitter clear workload, advances tunnel/scene/music state every frame, starts Paula channel 0 playback from `assets/audio_loop.raw`, and stays running until the left mouse button is pressed.
 
 ## Validation
 
@@ -93,9 +98,11 @@ shasum -a 256 -c MANIFEST.sha256
 
 - Hyperdrive plasma lattice: per-line AGA colour writes plus sub-frame palette phase modulation.
 - Tunnel layer: reciprocal-table camera/depth modulation plus static wire ribs in the generated screen layer.
-- Energy orbs: generated shaded orb art plus live sprite/orb control state.
+- Energy orbs: generated shaded hardware sprite images plus live sprite control-word orbit paths.
 - Morphing logo material: Copper glint, per-row scroll and dynamic colour-bank swaps.
 - Music-reactive scene graph: row/tick-style event pulses drive plasma intensity, tunnel speed and sprite bursts.
+- Bitplane warp: runtime `BPLCON1` scroll/shear motion over the planar display.
+- Blitter vector surface: hardware clear path for dynamic line/fill expansion.
 - Full-screen generated art: logo, aurora/plasma band, tunnel ribs, orb art, status panel and floor bars.
 
 ## License
