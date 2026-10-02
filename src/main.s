@@ -5,7 +5,8 @@ HEIGHT          EQU 256
 BYTES_PER_ROW   EQU 40
 PLANES          EQU 4
 PLANE_SIZE      EQU BYTES_PER_ROW*HEIGHT
-LOGO_BYTES      EQU 4*320*80/8
+LOGO_PLANE_SIZE EQU 320*80/8
+LOGO_BYTES      EQU PLANES*LOGO_PLANE_SIZE
 
         section code,code
 
@@ -61,6 +62,7 @@ Startup_PrintNeedAGA:
 
 Engine_Init:
         lea     CUSTOM,a6
+        bsr     Screen_Init
         bsr     Copper_Build
         move.l  #copper,d0
         move.w  d0,COP1LCL(a6)
@@ -94,6 +96,25 @@ Effect_Init:
         clr.w   fx_phase
         rts
 
+Screen_Init:
+        lea     screen,a0
+        moveq   #0,d0
+        move.w  #PLANES*PLANE_SIZE/4-1,d7
+.clear:
+        move.l  d0,(a0)+
+        dbra    d7,.clear
+        lea     logo_data,a0
+        lea     screen,a1
+        moveq   #PLANES-1,d6
+.plane:
+        move.w  #LOGO_PLANE_SIZE/4-1,d7
+.copy:
+        move.l  (a0)+,(a1)+
+        dbra    d7,.copy
+        lea     PLANE_SIZE-LOGO_PLANE_SIZE(a1),a1
+        dbra    d6,.plane
+        rts
+
 ; Effect_Frame updates the original state-of-the-art effect graph:
 ;  1. chunky-to-planar compatible four-plane logo layer
 ;  2. AGA 24-bit Copper plasma gradient
@@ -124,6 +145,18 @@ Effect_UpdateCopperGradient:
         rts
 
 Copper_Build:
+        lea     screen,a0
+        lea     copper_bplptrs,a1
+        moveq   #PLANES-1,d7
+.plane:
+        move.l  a0,d0
+        swap    d0
+        move.w  d0,2(a1)
+        swap    d0
+        move.w  d0,6(a1)
+        lea     PLANE_SIZE(a0),a0
+        adda.w  #8,a1
+        dbra    d7,.plane
         rts
 
 Music_Init:
@@ -154,6 +187,7 @@ copper:
         dc.w DDFSTRT,$0038,DDFSTOP,$00D0
         dc.w BPLCON0,$4200,BPLCON1,$0000,BPLCON2,$0000
         dc.w BPLCON3,$0C00,BPLCON4,$0011
+ copper_bplptrs:
         dc.w BPL1PTH,0,BPL1PTL,0
         dc.w BPL2PTH,0,BPL2PTL,0
         dc.w BPL3PTH,0,BPL3PTL,0

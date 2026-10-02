@@ -6,6 +6,10 @@ The first revision establishes the engine spine: deterministic assets, generated
 
 ![Generated logo preview](docs/screenshots/aga-hyperdrive-logo-preview.png)
 
+## FS-UAE test run
+
+![AGA Hyperdrive Engine running in FS-UAE](docs/screenshots/fsuae-testrun.png)
+
 ## Design goals
 
 - Maximise AGA capability with 24-bit Copper gradients, palette banking, sprite layers and blitter/vector workloads.
@@ -64,7 +68,7 @@ Generated assets:
 
 ## Run target
 
-Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The current executable is a foundation/smoke-test engine build; the next milestones are full chip-RAM rebasing, hardware-confirmed AGA detection, blitter vector layer, sprite multiplexer and scene sequencer.
+Use FS-UAE/WinUAE/Amiberry with an A1200 or A4000 AGA PAL configuration. The current executable is a foundation/smoke-test engine build that displays the generated logo through real Copper bitplane pointers and live AGA colour-slot updates. The next milestones are full chip-RAM rebasing, hardware-confirmed AGA detection, blitter vector layer, sprite multiplexer and scene sequencer.
 
 ## Validation
 

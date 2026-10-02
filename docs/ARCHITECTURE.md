@@ -8,6 +8,7 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 - `Engine_Init` owns the custom-chip setup and installs the Copper list.
 - `Effect_Init` and `Effect_Frame` are the effect graph entry points.
 - `Effect_UpdateCopperGradient` rewrites AGA high/low colour slots from a generated 24-bit table.
+- `Screen_Init` clears the full-height display buffer and copies the 80-line generated logo into each correctly-strided bitplane.
 - `Music_Init` and `Music_Tick` reserve the music control surface.
 
 ## Data flow

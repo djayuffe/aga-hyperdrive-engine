@@ -7,6 +7,7 @@
 - Generated Copper-gradient table.
 - Generated tunnel reciprocal table.
 - Live Copper slot updater in the assembly frame loop.
+- FS-UAE A1200 smoke test displays the generated logo through Copper-patched bitplane pointers.
 
 ## Next hardware-maximising effects
 
