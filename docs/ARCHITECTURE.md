@@ -8,6 +8,7 @@ AGA Hyperdrive Engine is split into deterministic generation tools and a small 6
 - `Engine_Init` owns the custom-chip setup and installs the Copper list.
 - `Effect_Init` and `Effect_Frame` are the effect graph entry points.
 - `Effect_UpdateCopperGradient` rewrites AGA high/low colour slots from a generated 24-bit table.
+- `Effect_CopperLattice`, `Effect_TunnelLayer`, `Effect_SpriteOrbLayer`, `Scene_Update` and `Music_EventBus` form the per-frame effect graph.
 - `Screen_Init` clears the full-height display buffer and copies the 80-line generated logo into each correctly-strided bitplane.
 - `Music_Init` and `Music_Tick` reserve the music control surface.
 - The main loop is persistent and exits only on left mouse, matching demo/cracktro behaviour instead of auto-closing during boot smoke tests.
@@ -39,3 +40,13 @@ The engine is designed around AGA PAL:
 - Copper-controlled effect slots for per-line 24-bit colour motion.
 - Blitter line/fill layer for vector and tunnel effects.
 - Hardware sprites for high-priority glow/orb layers.
+
+## Floppy turbo mode
+
+`make floppy-turbo` creates `build/floppy_turbo`, a minimal floppy-style staging directory with:
+
+- `S/Startup-Sequence`
+- `aga_hyperdrive_engine`
+- placeholder `C`, `DEVS` and `LIBS` directories
+
+The startup sequence launches the engine directly so minimal AROS/Kickstart boot environments do not abort on missing shell helper commands. If `xdftool` is installed, the build also emits `build/aga_hyperdrive_turbo.adf`.

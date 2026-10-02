@@ -37,6 +37,7 @@ The first revision establishes the engine spine: deterministic assets, generated
 make validate
 make verify-repro
 make
+make floppy-turbo
 ```
 
 The full executable build requires `vasmm68k_mot` on `PATH` or at `tools/bin/vasmm68k_mot`.
@@ -45,6 +46,8 @@ Output:
 
 ```text
 build/aga_hyperdrive_engine
+build/floppy_turbo/
+build/aga_hyperdrive_turbo.adf   # optional, only when xdftool exists
 ```
 
 ## Generate assets

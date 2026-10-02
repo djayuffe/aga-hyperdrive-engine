@@ -31,7 +31,10 @@ build:
 manifest:
 	$(PYTHON) tools/make_manifest.py
 
+floppy-turbo: $(TARGET)
+	$(PYTHON) tools/make_floppy_turbo.py $(TARGET)
+
 clean:
 	rm -rf build
 
-.PHONY: all assets validate verify-repro manifest clean
+.PHONY: all assets validate verify-repro manifest floppy-turbo clean

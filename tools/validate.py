@@ -28,7 +28,12 @@ if mod.exists():
 
 if main.exists():
     s = main.read_text()
-    for required in ("Effect_Init", "Effect_Frame", "Copper_Build", "Music_Tick", "AGA_REQUIRE", "Screen_Init", "copper_bplptrs", "logo_data"):
+    for required in (
+        "Effect_Init", "Effect_Frame", "Copper_Build", "Music_Tick", "AGA_REQUIRE",
+        "Screen_Init", "copper_bplptrs", "logo_data", "Effect_CopperLattice",
+        "Effect_TunnelLayer", "Effect_SpriteOrbLayer", "Scene_Update",
+        "Music_EventBus", "Sprite_Build", "cop_sprptrs", "sprite_orbs",
+    ):
         check(required in s, f"missing source symbol/comment {required}")
     check("move.w  d0,2(a1)" in s and "move.w  d0,6(a1)" in s, "Copper_Build must patch bitplane pointer high/low words")
     check("lea     screen,a0" in s and "LOGO_PLANE_SIZE" in s, "logo must be copied into a full-height screen buffer")

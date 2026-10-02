@@ -64,12 +64,14 @@ Engine_Init:
         lea     CUSTOM,a6
         bsr     Screen_Init
         bsr     Copper_Build
+        bsr     Sprite_Build
         move.l  #copper,d0
         move.w  d0,COP1LCL(a6)
         swap    d0
         move.w  d0,COP1LCH(a6)
         move.w  #DMAF_SETCLR|DMAF_MASTER|DMAF_COPPER|DMAF_BPL,DMACON(a6)
         bsr     Effect_Init
+        bsr     Scene_Init
         bsr     Music_Init
         rts
 
@@ -119,21 +121,29 @@ Screen_Init:
 ;  1. chunky-to-planar compatible four-plane logo layer
 ;  2. AGA 24-bit Copper plasma gradient
 ;  3. tunnel reciprocal table for ray/spline camera motion
-;  4. future blitter vector layer and sprite particle layer
+;  4. sprite orb phase layer
+;  5. scene and music event modulation
 Effect_Frame:
-        addq.w  #3,fx_phase
-        bsr     Effect_UpdateCopperGradient
+        bsr     Scene_Update
+        bsr     Music_EventBus
+        bsr     Effect_CopperLattice
+        bsr     Effect_TunnelLayer
+        bsr     Effect_SpriteOrbLayer
         rts
 
-Effect_UpdateCopperGradient:
+Effect_CopperLattice:
         lea     copper_fx_slots,a0
         lea     copper_gradient,a1
         move.w  fx_phase,d0
+        add.w   scene_speed,d0
+        add.w   music_pulse,d0
+        move.w  d0,fx_phase
         and.w   #$00FF,d0
         moveq   #31,d7
 .row:
         move.w  d0,d1
         add.w   d7,d1
+        add.w   tunnel_phase,d1
         and.w   #$00FF,d1
         lsl.w   #2,d1
         move.l  0(a1,d1.w),d2
@@ -142,6 +152,53 @@ Effect_UpdateCopperGradient:
         move.w  d2,14(a0)
         adda.w  #20,a0
         dbra    d7,.row
+        rts
+
+Effect_TunnelLayer:
+        lea     tunnel_table,a0
+        move.w  tunnel_phase,d0
+        add.w   scene_tunnel,d0
+        and.w   #$00BF,d0
+        move.w  d0,tunnel_phase
+        lsl.w   #1,d0
+        move.w  0(a0,d0.w),tunnel_depth
+        rts
+
+Effect_SpriteOrbLayer:
+        move.w  orb_phase,d0
+        add.w   scene_orbs,d0
+        add.w   music_pulse,d0
+        and.w   #$00FF,d0
+        move.w  d0,orb_phase
+        lea     sprite_orbs,a0
+        move.w  d0,d1
+        lsr.w   #2,d1
+        and.w   #$003F,d1
+        move.b  d1,1(a0)                 ; move first orb vertically enough to prove live sprite state
+        rts
+
+Scene_Init:
+        clr.w   scene_index
+        clr.w   scene_frame
+        move.w  #3,scene_speed
+        move.w  #1,scene_tunnel
+        move.w  #2,scene_orbs
+        rts
+
+Scene_Update:
+        addq.w  #1,scene_frame
+        cmp.w   #256,scene_frame
+        blo.s   .same
+        clr.w   scene_frame
+        addq.w  #1,scene_index
+        and.w   #$0003,scene_index
+.same:
+        lea     scene_table,a0
+        move.w  scene_index,d0
+        mulu.w  #6,d0
+        move.w  0(a0,d0.w),scene_speed
+        move.w  2(a0,d0.w),scene_tunnel
+        move.w  4(a0,d0.w),scene_orbs
         rts
 
 Copper_Build:
@@ -167,6 +224,34 @@ Music_Tick:
         addq.w  #1,music_tick
         rts
 
+Music_EventBus:
+        move.w  music_tick,d0
+        and.w   #$000F,d0
+        bne.s   .decay
+        move.w  #12,music_pulse
+        rts
+.decay:
+        tst.w   music_pulse
+        beq.s   .done
+        subq.w  #1,music_pulse
+.done:
+        rts
+
+Sprite_Build:
+        lea     sprite_orbs,a0
+        lea     cop_sprptrs,a1
+        moveq   #7,d7
+.spr:
+        move.l  a0,d0
+        swap    d0
+        move.w  d0,2(a1)
+        swap    d0
+        move.w  d0,6(a1)
+        lea     12(a0),a0
+        adda.w  #8,a1
+        dbra    d7,.spr
+        rts
+
         section data,data
 dos_name:       dc.b "dos.library",0
 msg_need_aga:   dc.b "AGA Hyperdrive Engine needs an Amiga 1200/4000 AGA chipset.",10
@@ -176,6 +261,20 @@ dos_base:       dc.l 0
 frame_counter:  dc.w 0
 fx_phase:       dc.w 0
 music_tick:     dc.w 0
+music_pulse:    dc.w 0
+scene_index:    dc.w 0
+scene_frame:    dc.w 0
+scene_speed:    dc.w 3
+scene_tunnel:   dc.w 1
+scene_orbs:     dc.w 2
+tunnel_phase:   dc.w 0
+tunnel_depth:   dc.w 0
+orb_phase:      dc.w 0
+scene_table:
+        dc.w 2,1,1
+        dc.w 3,2,2
+        dc.w 5,3,4
+        dc.w 8,5,6
 
 plasma_palette:
         incbin  "assets/plasma_palette.bin"
@@ -192,6 +291,15 @@ copper:
         dc.w BPL2PTH,0,BPL2PTL,0
         dc.w BPL3PTH,0,BPL3PTL,0
         dc.w BPL4PTH,0,BPL4PTL,0
+cop_sprptrs:
+        dc.w SPR0PTH,0,SPR0PTL,0
+        dc.w SPR1PTH,0,SPR1PTL,0
+        dc.w SPR2PTH,0,SPR2PTL,0
+        dc.w SPR3PTH,0,SPR3PTL,0
+        dc.w SPR4PTH,0,SPR4PTL,0
+        dc.w SPR5PTH,0,SPR5PTL,0
+        dc.w SPR6PTH,0,SPR6PTL,0
+        dc.w SPR7PTH,0,SPR7PTL,0
         dc.w COLOR00,$000,COLOR01,$0CFF,COLOR02,$0F7D,COLOR03,$0FFF
         dc.w COLOR04,$06AF,COLOR05,$0F47,COLOR06,$0FC6,COLOR07,$0FFF
 copper_fx_slots:
@@ -209,4 +317,10 @@ copper_gradient:
         incbin "assets/copper_gradient.bin"
 tunnel_table:
         incbin "assets/tunnel.bin"
+sprite_orbs:
+        rept 8
+        dc.w $4050,$4800
+        dc.w $3C3C,$7E7E,$FFFF,$7E7E
+        dc.w 0,0
+        endr
 chipdata_end:
