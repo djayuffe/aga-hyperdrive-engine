@@ -1,0 +1,9 @@
+build/
+assets/.generated
+tools/bin/
+tools/vendor/
+__pycache__/
+*.pyc
+.DS_Store
+*.lst
+a.out
